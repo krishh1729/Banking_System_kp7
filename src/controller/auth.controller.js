@@ -11,43 +11,75 @@ const jwt = require("jsonwebtoken")
  * 
  */
 
-async function userRegisterController(req,res)
-{
-   const { email , name , password } = req.body;
-   
-   const isExists = await userModel.findOne({
-    email : email
-   })
+async function userRegisterController(req, res) {
+  try {
+    const { email, name, password } = req.body;
 
-    if (isExists)
-    {
-        return res.status(422).json({
-            message : "user already exists with this email ! ",
-            status : "failed "
-        })
+    // 🔹 Only check presence
+    if (!email || !name || !password) {
+      return res.status(400).json({
+        message: "All fields are required",
+        status: "failed"
+      });
     }
 
-    const user = await  userModel.create({
-        email,password,name
-    })
+    // 🔹 Normalize email
+    const cleanEmail = email.trim().toLowerCase();
 
-    const token = jwt.sign({userId:user._id},process.env.JWT_SECRET,{
-        expiresIn : "3d"
+    // 🔹 Check existing user
+    const isExists = await userModel.findOne({ email: cleanEmail });
+
+    if (isExists) {
+      return res.status(409).json({
+        message: "User already exists",
+        status: "failed"
+      });
+    }
+
+    // 🔹 Create user (schema handles validation + hashing)
+    const user = await userModel.create({
+      email: cleanEmail,
+      name: name.trim(),
+      password
     });
 
-    res.cookie("token",token);
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "3d" }
+    );
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "strict"
+    });
 
-    res.status(201).json({
-        user:{
-            _id:user._id,
-            email:user.email,
-            name:user.name
-
-        },
+    return res.status(201).json({
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name
+      },
       token
-    })
+    });
 
+  } catch (err) {
+
+    // 🔥 IMPORTANT: Handle mongoose validation errors
+    if (err.name === "ValidationError") {
+      return res.status(400).json({
+        message: err.message,
+        status: "failed"
+      });
+    }
+
+    console.error(err);
+
+    return res.status(500).json({
+      message: "Internal server error",
+      status: "failed"
+    });
+  }
 }
 
 /**
