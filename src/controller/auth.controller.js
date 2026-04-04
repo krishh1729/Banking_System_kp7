@@ -1,6 +1,8 @@
 
 const userModel = require("../models/user.model")
 
+const emailService = require("../services/email.service")
+
 const jwt = require("jsonwebtoken")
 /**
  * 
@@ -54,7 +56,7 @@ async function userRegisterController(req, res) {
       sameSite: "strict"
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       user: {
         _id: user._id,
         email: user.email,
@@ -62,6 +64,8 @@ async function userRegisterController(req, res) {
       },
       token
     });
+
+    await emailService.sendRegistrationEmail(user.email, user.name);
 
   } catch (err) {
 
@@ -79,6 +83,8 @@ async function userRegisterController(req, res) {
       message: "Internal server error",
       status: "failed"
     });
+
+
   }
 }
 
