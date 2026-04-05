@@ -12,7 +12,8 @@ async function createAccountController(req , res )
         }
     )
 
-   // 🔥 populate user name
+   //  populate user name
+
   const populatedAccount = await accountModel
     .findById(account._id)
     .populate("user", "name email");
