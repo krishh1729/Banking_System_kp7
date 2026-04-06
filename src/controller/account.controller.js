@@ -8,7 +8,7 @@ async function createAccountController(req , res )
 
     const account = await accountModel.create(
         {
-            user : user._id
+            user : user._id 
         }
     )
 
@@ -23,6 +23,8 @@ async function createAccountController(req , res )
     account: populatedAccount
   });
 }
+
+// exporting the controller 
 
 module.exports = 
 {createAccountController } ;
